@@ -25,6 +25,23 @@ interface IResolverService {
         returns (bytes memory result, uint64 expires, bytes memory sig);
 }
 
+/*
+    NOTE:
+
+    While the current implementation is able to pass through both
+    resolve and resolveWithProof tests, want to point out a caveat
+    that this implementation was created by combining methodology
+    from the Farcaster FnameResolver, and the official ENS OffchainResolver.
+
+    The FnameResolver implementation was expecially useful due to better documentation
+    of the mechanics as well as being written in Foundry, while I believ ENS implementation
+    was done a bit more simply / closer to the original ENSIP10 spec. 
+
+    There are still potentially some pieces of logic misplaced, such as being unclear
+    of the role the "expiry" value is being used for, but I think this is a decent place to start.
+    At some point we will want to get this audited, as well as our other contracts
+*/
+
 /**
  * @title OffchainResolver
  * @author Lifeworld
