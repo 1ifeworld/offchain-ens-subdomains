@@ -14,17 +14,13 @@ contract DeployCore is Script {
     function run() public {
         // Setup deploy environment
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast(deployerPrivateKey);            
 
-        // Setup signers
-        address[] memory signers = new address[](1);
-        signers[0] = operator;        
-
-        // Deploy OffchainResolver
-        offchainResolver = new OffchainResolver(dbUrl, signers);
+        // Deploy OffchainResolver (CCIP gateway, initial owner, initial signer)
+        offchainResolver = new OffchainResolver(dbUrl, operator, operator);
 
         // Register on ENS
-        
+        // TODO:
         vm.stopBroadcast();        
     }    
 }
