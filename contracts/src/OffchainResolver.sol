@@ -32,7 +32,7 @@ interface IResolverService {
  * @notice Implements an ENS resolver that directs all queries to a CCIP read gateway.
  * @dev Callers must implement EIP 3668 and ENSIP 10.
  */
-contract OffchainResolver is Ownable, SupportsInterface, IExtendedResolver {
+contract OffchainResolver is SupportsInterface, IExtendedResolver, Ownable {
 
     //////////////////////////////////////////////////
     // ERRORS
@@ -140,11 +140,11 @@ contract OffchainResolver is Ownable, SupportsInterface, IExtendedResolver {
      * @return ABI-encoded address of the fname owner.
      */     
     function resolveWithProof(bytes calldata response, bytes calldata extraData) external view returns (bytes memory) {        
-        // Decode response into encoded result, sig expiry timestamp, and signature
+        // Decode response into encoded result (address of resolved username), sig expiry timestamp, and signature
         (bytes memory result, uint64 expires, bytes memory sig) =
             abi.decode(response, (bytes, uint64, bytes));        
         // Attempt to recovery signer from hashed digest + signature
-        address signer = ECDSA.recover(makeSignatureHash(address(this), expires, extraData, result), sig);  
+        address signer = ECDSA.recover(_makeSignatureHash(address(this), expires, extraData, result), sig);  
         // Check if sig has expired
         if (expires < block.timestamp) revert SignatureExpired(expires);                  
         // Check if recovered signer address is authorized signer
@@ -195,7 +195,7 @@ contract OffchainResolver is Ownable, SupportsInterface, IExtendedResolver {
      * @param request: The original request that was sent.
      * @param result: The `result` field of the response (not including the signature part).
      */
-    function makeSignatureHash(
+    function _makeSignatureHash(
         address target,
         uint64 expires,
         bytes calldata request,
@@ -214,11 +214,12 @@ contract OffchainResolver is Ownable, SupportsInterface, IExtendedResolver {
     }    
 
     // NOTE: can potentialyl delete the external version of this? unclear why it was here in the first place
-    // function makeSignatureHash(address target, uint64 expires, bytes calldata request, bytes memory result)
-    //     external
-    //     pure
-    //     returns (bytes32)
-    // {
-    //     return SignatureVerifier.makeSignatureHash(target, expires, request, result);
-    // }    
+    // NOTE: literally just helpful for test suite. can prob just move it into there
+    function makeSignatureHash(address target, uint64 expires, bytes calldata request, bytes memory result)
+        external
+        pure
+        returns (bytes32)
+    {
+        return _makeSignatureHash(target, expires, request, result);
+    }    
 }
