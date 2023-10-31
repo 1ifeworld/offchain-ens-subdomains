@@ -8,21 +8,16 @@ import { set } from './functions/set'
 
 export async function setName(request: IRequest, env: Env): Promise<Response> {
   const body = await request.json()
-  console.log("BODY")
   const safeParse = ZodName.safeParse(body)
 
   if (!safeParse.success) {
     const response = { success: false, error: safeParse.error }
-    console.log("NOT PARSED")
     return Response.json(response, { status: 400 })
   }
-  console.log("PRESAFE", safeParse.data)
   const { name, owner } = safeParse.data
-  console.log("SAFEPARSE", safeParse.data)
 
   // Only allow 3LDs, no nested subdomains
   if (name.split('.').length !== 3) {
-    console.log("SPLIT")
     const response = { success: false, error: 'Invalid name' }
     return Response.json(response, { status: 400 })
   }
@@ -41,7 +36,6 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
 
   // Check if the name is already taken
   const existingName = await get(name, env)
-  console.log("EXISTINGNAME")
 
   // If the name is owned by someone else, return an error
   if (existingName && existingName.owner !== owner) {
@@ -51,7 +45,6 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
 
   // Save the name
   try {
-    console.log("AWAITINGSET")
     await set(safeParse.data, env)
     const response = { success: true }
     return Response.json(response, { status: 201 })
