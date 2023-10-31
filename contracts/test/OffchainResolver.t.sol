@@ -71,7 +71,7 @@ contract OffchainResolverTest is Test {
         // Setup values
         string[] memory urls = new string[](1);
         urls[0] = DB_URL;
-        bytes memory callData = abi.encodeCall(IResolverService.resolve, (DNS_ENCODED_NAME, DNS_ENCODED_NAME));
+        bytes memory callData = abi.encodeCall(IResolverService.resolve, (DNS_ENCODED_NAME, ENS_NAMEHASH));
         bytes memory offchainLookup = abi.encodeWithSelector(
             OffchainResolver.OffchainLookup.selector,
             address(offchainResolver),
@@ -82,7 +82,7 @@ contract OffchainResolverTest is Test {
         );
         // Call and expert revert
         vm.expectRevert(offchainLookup);
-        offchainResolver.resolve(DNS_ENCODED_NAME, DNS_ENCODED_NAME);
+        offchainResolver.resolve(DNS_ENCODED_NAME, ENS_NAMEHASH);
     }
 
     //////////////////////////////////////////////////
