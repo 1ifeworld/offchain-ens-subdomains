@@ -1,0 +1,11 @@
+name = "server"
+main = "src/index.ts"
+compatibility_date = "2023-10-25"
+
+d1_databases = [
+  { binding = "DB", name = "river", database_id = "c2644ec6-1700-4d5c-9d25-3ba84092fc11" }
+]
+
+[vars]
+PRIVATE_KEY=
+

@@ -11,7 +11,7 @@ import { Database, DatabaseResult } from './db'
 const Resolver = new ethers.utils.Interface(Resolver_abi)
 
 function decodeDnsName(dnsname: Buffer) {
-  const labels = []
+  const labels: string[] = [];
   let idx = 0
   while (true) {
     const len = dnsname.readUInt8(idx)

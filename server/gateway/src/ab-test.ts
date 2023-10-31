@@ -1,4 +1,4 @@
-const ORIGIN_URL = 'https://example.com';
+const ORIGIN_URL = 'https:server.talktomenice.workers.dev';
 const EXPERIMENTS = [
 	{ name: 'big-button', threshold: 0.5 }, // enable the Big Button experiment for 50% of users
 	{ name: 'new-brand', threshold: 0.1 }, // enable the New Brand experiment for 10% of users
