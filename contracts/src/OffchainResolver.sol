@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import {Ownable} from "openzeppelin-contracts/utils/access/Ownable";
+import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 
 interface ISupportsInterface {
     function supportsInterface(bytes4 interfaceId) external pure returns (bool);
@@ -13,15 +14,15 @@ abstract contract SupportsInterface is ISupportsInterface {
     }
 }
 
+interface IExtendedResolver {
+    function resolve(bytes memory name, bytes memory data) external view returns (bytes memory);
+}
+
 interface IResolverService {
     function resolve(bytes calldata name, bytes calldata data)
         external
         view
         returns (bytes memory result, uint64 expires, bytes memory sig);
-}
-
-interface IExtendedResolver {
-    function resolve(bytes memory name, bytes memory data) external view returns (bytes memory);
 }
 
 /**
@@ -31,7 +32,7 @@ interface IExtendedResolver {
  * @notice Implements an ENS resolver that directs all queries to a CCIP read gateway.
  * @dev Callers must implement EIP 3668 and ENSIP 10.
  */
-contract OffchainResolver is Ownable {
+contract OffchainResolver is Ownable, SupportsInterface, IExtendedResolver {
 
     //////////////////////////////////////////////////
     // ERRORS
@@ -100,8 +101,7 @@ contract OffchainResolver is Ownable {
      * @param _initialOwner Initial owner address.
      * @param _signer       Initial authorized signer address.     
      */
-    constructor(string memory _url, address, _initialOwner, address _signer) {
-        _transferOwnership(_initialOwner);
+    constructor(string memory _url, address _initialOwner, address _signer) Ownable(_initialOwner) {
         url = _url;
         isAuthorized[_signer] = true;
         emit AddSigner(_signer);
@@ -120,7 +120,7 @@ contract OffchainResolver is Ownable {
      *
      * @return The return data, ABI encoded identically to the underlying function.
      */
-    function resolve(bytes calldata name, bytes calldata data) external view override returns (bytes memory) {
+    function resolve(bytes calldata name, bytes calldata data) external view returns (bytes memory) {
         bytes memory callData = abi.encodeWithSelector(IResolverService.resolve.selector, name, data);
         string[] memory urls = new string[](1);
         urls[0] = url;
