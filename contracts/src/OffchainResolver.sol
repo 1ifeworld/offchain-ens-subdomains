@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import "./SupportsInterface.sol";
-import "./IExtendedResolver.sol";
-import "./SignatureVerifier.sol";
 import {Ownable} from "openzeppelin-contracts/utils/access/Ownable";
+
+interface ISupportsInterface {
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool);
+}
+
+abstract contract SupportsInterface is ISupportsInterface {
+    function supportsInterface(bytes4 interfaceID) virtual override public pure returns(bool) {
+        return interfaceID == type(ISupportsInterface).interfaceId;    
+    }
+}
 
 interface IResolverService {
     function resolve(bytes calldata name, bytes calldata data)
@@ -13,15 +20,22 @@ interface IResolverService {
         returns (bytes memory result, uint64 expires, bytes memory sig);
 }
 
-/**
- * Implements an ENS resolver that directs all queries to a CCIP read gateway.
- * Callers must implement EIP 3668 and ENSIP 10.
- */
-contract OffchainResolver is IExtendedResolver, SupportsInterface, Ownable {
+interface IExtendedResolver {
+    function resolve(bytes memory name, bytes memory data) external view returns (bytes memory);
+}
 
-    /*//////////////////////////////////////////////////////////////
-                                 ERRORS
-    //////////////////////////////////////////////////////////////*/
+/**
+ * @title OffchainResolver
+ * @author Lifeworld
+ *
+ * @notice Implements an ENS resolver that directs all queries to a CCIP read gateway.
+ * @dev Callers must implement EIP 3668 and ENSIP 10.
+ */
+contract OffchainResolver is Ownable {
+
+    //////////////////////////////////////////////////
+    // ERRORS
+    ////////////////////////////////////////////////// 
 
     /**
      * @dev Revert to indicate an offchain CCIP lookup. See: https://eips.ethereum.org/EIPS/eip-3668
@@ -40,9 +54,12 @@ contract OffchainResolver is IExtendedResolver, SupportsInterface, Ownable {
     /// @dev Revert if the recovered signer address is not an authorized signer.
     error InvalidSigner();    
 
-    /*//////////////////////////////////////////////////////////////
-                                 EVENTS
-    //////////////////////////////////////////////////////////////*/
+    /// @dev Revert if the signature has expired.
+    error SignatureExpired(uint64 deadline);
+
+    //////////////////////////////////////////////////
+    // EVENTS
+    ////////////////////////////////////////////////// 
 
     /**
      * @dev Emit an event when the contract owner authorizes a new signer.
@@ -58,9 +75,9 @@ contract OffchainResolver is IExtendedResolver, SupportsInterface, Ownable {
      */
     event RemoveSigner(address indexed signer);
 
-    /*//////////////////////////////////////////////////////////////
-                              STORAGE
-    //////////////////////////////////////////////////////////////*/    
+    //////////////////////////////////////////////////
+    // STORAGE
+    ////////////////////////////////////////////////// 
 
     /**
      * @dev URL of the CCIP lookup gateway.
@@ -72,12 +89,12 @@ contract OffchainResolver is IExtendedResolver, SupportsInterface, Ownable {
      */    
     mapping(address => bool) public isAuthorized;
 
-    /*//////////////////////////////////////////////////////////////
-                               CONSTRUCTOR
-    //////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////
+    // CONSTRUCTOR
+    ////////////////////////////////////////////////// 
 
     /**
-     * @notice Set the lookup gateway URL and initial signer.
+     * @notice Set the resolver owner, lookup gateway URL, and initial signer.
      *
      * @param _url          Lookup gateway URL. This value is set permanently.
      * @param _initialOwner Initial owner address.
@@ -88,21 +105,60 @@ contract OffchainResolver is IExtendedResolver, SupportsInterface, Ownable {
         url = _url;
         isAuthorized[_signer] = true;
         emit AddSigner(_signer);
-    }
+    }  
 
-    /*//////////////////////////////////////////////////////////////
-                               OWNER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/    
+    //////////////////////////////////////////////////
+    // RESOLVER VIEWS
+    //////////////////////////////////////////////////  
 
     /**
-     * Sets the URL for the resolver service. Only callable by owner.
+     * @notice Resolve the provided ENS name, as specified by ENSIP10.
+     *         This function will always revert to indicate an offchain lookup.     
+     *
+     * @param name: The DNS-encoded name to resolve.
+     * @param data: The ABI encoded data for the underlying resolution function (Eg, addr(bytes32), text(bytes32,string), etc).
+     *
+     * @return The return data, ABI encoded identically to the underlying function.
      */
-    function updateUrl(string calldata _url) onlyOwner external {
-        url = _url;
+    function resolve(bytes calldata name, bytes calldata data) external view override returns (bytes memory) {
+        bytes memory callData = abi.encodeWithSelector(IResolverService.resolve.selector, name, data);
+        string[] memory urls = new string[](1);
+        urls[0] = url;
+        revert OffchainLookup(address(this), urls, callData, this.resolveWithProof.selector, callData);
     }
 
     /**
-     * Sets the signers for the resolver service. Only callable by the signers.
+     * @notice Offchain lookup callback. The caller must provide the signed response returned by
+     *         the lookup gateway.
+     *
+     * @param response: An ABI encoded tuple of `(bytes result, uint64 expires, bytes sig)`, where `result` is the data to return
+     *        to the caller (abi.encoded address associated with username), 
+     *        and `sig` is the (r,s,v) encoded message signature.
+     * @param extraData: The original request that sent to CCIP gateway. Used in hash digest creation
+     *        to recover associated signature
+     *
+     * @return ABI-encoded address of the fname owner.
+     */     
+    function resolveWithProof(bytes calldata response, bytes calldata extraData) external view returns (bytes memory) {        
+        // Decode response into encoded result, sig expiry timestamp, and signature
+        (bytes memory result, uint64 expires, bytes memory sig) =
+            abi.decode(response, (bytes, uint64, bytes));        
+        // Attempt to recovery signer from hashed digest + signature
+        address signer = ECDSA.recover(makeSignatureHash(address(this), expires, extraData, result), sig);  
+        // Check if sig has expired
+        if (expires < block.timestamp) revert SignatureExpired(expires);                  
+        // Check if recovered signer address is authorized signer
+        if (!isAuthorized[signer]) revert InvalidSigner();
+        // Return encoded result
+        return result;
+    }    
+
+    //////////////////////////////////////////////////
+    // SIGNER ADMIN
+    //////////////////////////////////////////////////   
+
+    /**
+     * Adds signers for the resolver service. Only callable by contract owner.
      */
     function addSigners(address[] calldata _signers) onlyOwner external {
         for (uint256 i = 0; i < _signers.length; i++) {
@@ -112,50 +168,57 @@ contract OffchainResolver is IExtendedResolver, SupportsInterface, Ownable {
     }    
 
     /**
-     * Sets the signers for the resolver service. Only callable by the signers.
+     * Removes signers for the resolver service. Only callable by contract owner signers.
      */
     function removeSigners(address[] calldata _signers) onlyOwner external {
         for (uint256 i = 0; i < _signers.length; i++) {
             isAuthorized[_signers[i]] = false;
             emit RemoveSigner(_signers[i]);
         }
-    }        
+    }          
 
-    /*//////////////////////////////////////////////////////////////
-                             RESOLVER VIEWS
-    //////////////////////////////////////////////////////////////*/    
-
-    function makeSignatureHash(address target, uint64 expires, bytes calldata request, bytes memory result)
-        external
-        pure
-        returns (bytes32)
-    {
-        return SignatureVerifier.makeSignatureHash(target, expires, request, result);
-    }
-
-    /**
-     * Resolves a name, as specified by ENSIP 10.
-     * @param name The DNS-encoded name to resolve.
-     * @param data The ABI encoded data for the underlying resolution function (Eg, addr(bytes32), text(bytes32,string), etc).
-     * @return The return data, ABI encoded identically to the underlying function.
-     */
-    function resolve(bytes calldata name, bytes calldata data) external view override returns (bytes memory) {
-        bytes memory callData = abi.encodeWithSelector(IResolverService.resolve.selector, name, data);
-        string[] memory urls = new string[](1);
-        urls[0] = url;
-        revert OffchainLookup(address(this), urls, callData, OffchainResolver.resolveWithProof.selector, callData);
-    }
-
-    /**
-     * Callback used by CCIP read compatible clients to verify and parse the response.
-     */
-    function resolveWithProof(bytes calldata response, bytes calldata extraData) external view returns (bytes memory) {
-        (address signer, bytes memory result) = SignatureVerifier.verify(extraData, response);
-        if (!isAuthorized[signer]) revert InvalidSigner();
-        return result;
-    }
+    //////////////////////////////////////////////////
+    // INTERFACE DETECTION
+    //////////////////////////////////////////////////      
 
     function supportsInterface(bytes4 interfaceID) public pure override returns (bool) {
         return interfaceID == type(IExtendedResolver).interfaceId || super.supportsInterface(interfaceID);
     }
+    
+    //////////////////////////////////////////////////
+    // HELPERS
+    ////////////////////////////////////////////////// 
+
+    /**
+     * @dev Generates a hash for signing/verifying.
+     * @param target: The address the signature is for.
+     * @param request: The original request that was sent.
+     * @param result: The `result` field of the response (not including the signature part).
+     */
+    function makeSignatureHash(
+        address target,
+        uint64 expires,
+        bytes calldata request,
+        bytes memory result
+    ) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    hex"1900",
+                    target,
+                    expires,
+                    keccak256(request),
+                    keccak256(result)
+                )
+            );
+    }    
+
+    // NOTE: can potentialyl delete the external version of this? unclear why it was here in the first place
+    // function makeSignatureHash(address target, uint64 expires, bytes calldata request, bytes memory result)
+    //     external
+    //     pure
+    //     returns (bytes32)
+    // {
+    //     return SignatureVerifier.makeSignatureHash(target, expires, request, result);
+    // }    
 }
