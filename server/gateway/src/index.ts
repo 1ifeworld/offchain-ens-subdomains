@@ -14,7 +14,7 @@ import apiRouter from './router';
 import { Router, IRequest } from 'itty-router';
 import { Env } from '../src/env'
 import { getName, getNames, setName } from './handlers';
-import { getCcipRead} from './ccip-read/getCCIPRead'
+import { getCcipRead } from './handlers/getCCIPRead';
 
 const router = Router();
 
