@@ -27,31 +27,35 @@ router
   .all('*', () => new Response('Not found', { status: 404 }));
 
 
-export default {
-	async fetch(request: any, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const response = await router.handle(request as Request, env);
+	export default {
+		async fetch(request: any, env: Env, ctx: ExecutionContext): Promise<Response> {
+			const response = await router.handle(request as Request, env);
+			if (response.status !== 404) {
+				return response;
+			}
 
-		const url = new URL(request.url);
+			const url = new URL(request.url);
 
-		switch (url.pathname) {
-			case '/redirect':
-				return handleRedirect.fetch(request, env, ctx);
+			switch (url.pathname) {
+				case '/redirect':
+					return handleRedirect.fetch(request, env, ctx);
 
-			case '/proxy':
-				return handleProxy.fetch(request, env, ctx);
-		}
+				case '/proxy':
+					return handleProxy.fetch(request, env, ctx);
+			}
 
-		if (url.pathname.startsWith('/api/')) {
-			return apiRouter.handle(request);
-		}
+			if (url.pathname.startsWith('/api/')) {
+				return apiRouter.handle(request);
+			}
 
-		return new Response(
-			`Try making requests to:
-      <ul>
-      <li><code><a href="/redirect?redirectUrl=https:server.talktomenice.workers.dev">/redirect?redirectUrl=https:server.talktomenice.workers.dev</a></code>,</li>
-      <li><code><a href="/proxy?modify&proxyUrl=https://server.talktomenice.workers.dev">/proxy?modify&proxyUrl=server.talktomenice.workers.dev/</a></code>, or</li>
-      <li><code><a href="/api/todos">/api/todos</a></code></li>`,
-			{ headers: { 'Content-Type': 'text/html' } }
-		);
-	},
-};
+			return new Response(
+				`Try making requests to:
+				<ul>
+				<li><code><a href="/redirect?redirectUrl=https:server.talktomenice.workers.dev">/redirect?redirectUrl=https:server.talktomenice.workers.dev</a></code>,</li>
+				<li><code><a href="/proxy?modify&proxyUrl=https://server.talktomenice.workers.dev">/proxy?modify&proxyUrl=server.talktomenice.workers.dev/</a></code>, or</li>
+				<li><code><a href="/api/todos">/api/todos</a></code></li>`,
+				{ headers: { 'Content-Type': 'text/html' } }
+			);
+		},
+	};
+
