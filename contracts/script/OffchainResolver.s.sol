@@ -8,7 +8,7 @@ import {OffchainResolver} from "../src/OffchainResolver.sol";
 contract DeployCore is Script {
 
     OffchainResolver offchainResolver;
-    string dbUrl = "example.river.ph";
+    string gatewayUrl = "server.talktomenice.workers.dev/{sender}/{data}.json";
     address operator = 0x004991c3bbcF3dd0596292C80351798965070D75;
 
     function run() public {
@@ -17,10 +17,8 @@ contract DeployCore is Script {
         vm.startBroadcast(deployerPrivateKey);            
 
         // Deploy OffchainResolver (CCIP gateway, initial owner, initial signer)
-        offchainResolver = new OffchainResolver(dbUrl, operator, operator);
+        offchainResolver = new OffchainResolver(gatewayUrl, operator, operator);
 
-        // Register on ENS
-        // TODO:
         vm.stopBroadcast();        
     }    
 }
