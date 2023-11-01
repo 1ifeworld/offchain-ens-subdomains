@@ -22,6 +22,7 @@ export function parseNameFromDb(
 
   function parseName(name: SelectableKysely) {
     return {
+      id: name.id,
       name: name.name,
       owner: name.owner,
       addresses: name.addresses ? JSON.parse(name.addresses) : undefined,
@@ -50,6 +51,7 @@ export function stringifyNameForDb(
 
   function stringifyName(name: Name) {
     return {
+      id: name.id,
       name: name.name,
       owner: name.owner,
       addresses: name.addresses ? JSON.stringify(name.addresses) : null,

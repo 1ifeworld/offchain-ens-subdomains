@@ -13,8 +13,8 @@ export async function set(nameData: Name, env: Env) {
       .values(body)
       .onConflict((oc) => oc.column('name').doUpdateSet(body))
       .execute();
-  } catch (error) {
+} catch (error) {
     console.error("Error in setting name:", error);
     throw error;
-  }
+}
 }

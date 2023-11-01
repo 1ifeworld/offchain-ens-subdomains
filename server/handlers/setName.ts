@@ -10,6 +10,7 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
   const body = await request.json()
   const safeParse = ZodName.safeParse(body)
 
+
   if (!safeParse.success) {
     const response = { success: false, error: safeParse.error }
     return Response.json(response, { status: 400 })
@@ -45,12 +46,13 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
 
   // Save the name
   try {
-    await set(safeParse.data, env)
-    const response = { success: true }
-    return Response.json(response, { status: 201 })
+    await set(safeParse.data, env);
+    const response = { success: true };
+    return Response.json(response, { status: 201 });
   } catch (err) {
-    console.error(err)
-    const response = { success: false, error: 'Error setting name' }
-    return Response.json(response, { status: 500 })
+    console.error(err);
+    const errorMessage = (err instanceof Error) ? err.message : "An unexpected error occurred";
+    const response = { success: false, error: errorMessage };
+    return Response.json(response, { status: 500 });
   }
 }
