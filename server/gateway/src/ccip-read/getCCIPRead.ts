@@ -2,7 +2,7 @@ import { SigningKey } from 'ethers/lib/utils';
 
 import { database } from './db';
 import { makeApp } from './server';
-import { Env } from '../../../env';
+import { Env } from '../env';
 
 export const getCcipRead = async (request: Request, env: Env) => {
   const privateKey = env.PRIVATE_KEY;
