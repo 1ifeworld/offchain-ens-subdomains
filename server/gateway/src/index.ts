@@ -12,9 +12,9 @@ import handleProxy from './proxy';
 import handleRedirect from './redirect';
 import apiRouter from './router';
 import { Router, IRequest } from 'itty-router';
-import { Env } from '../../env'
-import { getName, getNames, setName } from '../../handlers';
-import { getCcipRead} from '../../src/ccip-read/getCCIPRead'
+import { Env } from '../src/env'
+import { getName, getNames, setName } from './handlers';
+import { getCcipRead} from './ccip-read/getCCIPRead'
 
 const router = Router();
 
