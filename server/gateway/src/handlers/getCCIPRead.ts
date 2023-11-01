@@ -1,7 +1,7 @@
 import { SigningKey } from 'ethers/lib/utils';
 
-import { database } from './db';
-import { makeApp } from './server';
+import { database } from '../ccip-read/db'
+import { makeApp } from '../ccip-read/server'
 import { Env } from '../env';
 
 export const getCcipRead = async (request: Request, env: Env) => {
