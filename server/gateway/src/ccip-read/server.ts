@@ -1,12 +1,13 @@
 import { Server } from '@ensdomains/ccip-read-cf-worker'
 import { OffchainLookupAbi } from '../abi/offchainResolver'
+import {EnsRegistryAbi } from '../abi/ensRegistry'
 import { Buffer } from 'node:buffer'
 import { BytesLike, ethers } from 'ethers'
 import { Result, hexConcat } from 'ethers/lib/utils'
 import { Env } from '../env'
 import { Database, DatabaseResult } from './db'
 
-const Resolver = new ethers.utils.Interface(OffchainLookupAbi)
+const Resolver = new ethers.utils.Interface(EnsRegistryAbi)
 
 function decodeDnsName(dnsname: Buffer) {
   const labels: string[] = [];
