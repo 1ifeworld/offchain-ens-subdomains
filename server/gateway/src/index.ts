@@ -19,12 +19,30 @@ import { getCcipRead } from './handlers/getCCIPRead';
 const router = Router();
 
 router
-  .all('*')
-  .get('/lookup/*', (request: any, env) => getCcipRead(request as Request, env))
-	.get('/get/:name', (request: IRequest, env) => getName(request, env))
-  .get('/names', (request: any, env) => getNames(env))
-	.post('/set', (request: IRequest, env) => setName(request, env))
-  .all('*', () => new Response('Not found', { status: 404 }));
+    .all('*', (request: any, env) => {
+        console.log('Incoming Request:', request.method, request.url);
+    })
+    .get('/*/*', (request: any, env) => {
+        console.log('Handling /* with', request.url);
+        return getCcipRead(request as Request, env);
+    })
+    .get('/get/:name', (request: IRequest, env) => {
+        console.log('Handling /get/:name with', request.params.name);
+        return getName(request, env);
+    })
+    .get('/names', (request: any, env) => {
+        console.log('Handling /names');
+        return getNames(env);
+    })
+    .post('/set', (request: IRequest, env) => {
+        console.log('Handling /set with', request);
+        return setName(request, env);
+    })
+    .all('*', () => {
+        console.log('Route not found');
+        return new Response('Not found', { status: 404 });
+    });
+
 
 
 	export default {
@@ -49,6 +67,7 @@ router
 			}
 
 			return new Response(
+
 				`Try making requests to:
 				<ul>
 				<li><code><a href="/redirect?redirectUrl=https:server.talktomenice.workers.dev">/redirect?redirectUrl=https:server.talktomenice.workers.dev</a></code>,</li>

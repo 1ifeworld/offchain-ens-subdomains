@@ -1,14 +1,12 @@
 import { Server } from '@ensdomains/ccip-read-cf-worker'
-import { abi as Resolver_abi } from '@ensdomains/ens-contracts/artifacts/contracts/resolvers/Resolver.sol/Resolver.json'
-import { abi as IResolverService_abi } from '@ensdomains/offchain-resolver-contracts/artifacts/contracts/OffchainResolver.sol/IResolverService.json'
-// import { Buffer } from 'buffer'
+import { OffchainLookupAbi } from '../abi/offchainResolver'
+import { Buffer } from 'node:buffer'
 import { BytesLike, ethers } from 'ethers'
 import { Result, hexConcat } from 'ethers/lib/utils'
-
 import { Env } from '../env'
 import { Database, DatabaseResult } from './db'
 
-const Resolver = new ethers.utils.Interface(Resolver_abi)
+const Resolver = new ethers.utils.Interface(OffchainLookupAbi)
 
 function decodeDnsName(dnsname: Buffer) {
   const labels: string[] = [];
@@ -54,7 +52,10 @@ async function query(
   data: string,
   env: Env
 ): Promise<{ result: BytesLike; validUntil: number }> {
+	console.log('Query called with', name, data);
+
   // Parse the data nested inside the second argument to `resolve`
+	try {
   const { signature, args } = Resolver.parseTransaction({ data })
 
   if (ethers.utils.nameprep(name) !== name) {
@@ -75,8 +76,11 @@ async function query(
   return {
     result: Resolver.encodeFunctionResult(signature, result),
     validUntil: Math.floor(Date.now() / 1000 + ttl),
+  } } catch (error: any) {
+    console.error('Error in query:', error.message, error.stack);
+    throw new Error(`Error in query function: ${error.message}`);
   }
-}
+  }
 
 export function makeServer(
   signer: ethers.utils.SigningKey,
@@ -84,10 +88,11 @@ export function makeServer(
   env: Env
 ) {
   const server = new Server()
-  server.add(IResolverService_abi, [
+  server.add(OffchainLookupAbi, [
     {
       type: 'resolve',
       func: async ([encodedName, data]: Result, request) => {
+				try {
         const name = decodeDnsName(Buffer.from(encodedName.slice(2), 'hex'))
 
         // Query the database
@@ -108,7 +113,11 @@ export function makeServer(
         const sig = signer.signDigest(messageHash)
         const sigData = hexConcat([sig.r, sig.s, new Uint8Array([sig.v])])
         return [result, validUntil, sigData]
-      },
+			} catch (error: any) {
+				console.error('Error in resolve:', error.message, error.stack);
+				throw new Error(`Error in resolve function: ${error.message}`);
+			}
+		},
     },
   ])
   return server
