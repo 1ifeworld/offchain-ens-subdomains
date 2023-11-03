@@ -6,8 +6,9 @@ import { BytesLike, ethers } from 'ethers'
 import { Result, hexConcat } from 'ethers/lib/utils'
 import { Env } from '../env'
 import { Database, DatabaseResult } from './db'
+import { Client } from 'pg'
 
-const Resolver = new ethers.utils.Interface(EnsRegistryAbi)
+const Resolver = new ethers.utils.Interface(OffchainLookupAbi)
 
 function decodeDnsName(dnsname: Buffer) {
   const labels: string[] = [];

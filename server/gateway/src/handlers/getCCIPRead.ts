@@ -7,12 +7,14 @@ export const getCcipRead = async (request: Request, env: Env) => {
     console.log('getCcipRead called with', request.url);
     try {
 			const url = new URL(request.url);
+			console.log("URL", url)
 
 			// Split the pathname into segments and filter out any empty strings
 			const segments = url.pathname.split('/').filter(segment => segment);
+			console.log("SEGMENTED", segments)
 
 			// Ensure there are exactly 2 segments
-			if (segments.length !== 2) {
+			if (segments.length !== 3) {
 					console.error('Invalid URL format:', request.url);
 					return new Response('Invalid URL format', { status: 400 });
 			}
