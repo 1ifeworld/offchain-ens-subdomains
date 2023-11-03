@@ -11,13 +11,7 @@ export const getCcipRead = async (request: Request, env: Env) => {
 
 			// Split the pathname into segments and filter out any empty strings
 			const segments = url.pathname.split('/').filter(segment => segment);
-			console.log("SEGMENTED", segments)
-
-			// Ensure there are exactly 2 segments
-			if (segments.length !== 3) {
-					console.error('Invalid URL format:', request.url);
-					return new Response('Invalid URL format', { status: 400 });
-			}
+			console.log("SEGMENTED", segments.length)
 
 			// Extract the sender and data segments
 			const sender = segments[0];
@@ -28,8 +22,10 @@ export const getCcipRead = async (request: Request, env: Env) => {
         }
         const signer = new SigningKey(privateKey);
         const ccipRouter = makeApp(signer, '/', database, env);
+				const value = ccipRouter.handle(request);
+				console.log ("VALUE", value)
+				return value
 
-        return ccipRouter.handle(request);
     } catch (error) {
 			if (error instanceof Error) {
 					console.error('Error in getCcipRead:', error.message, error.stack);

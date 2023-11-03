@@ -30,10 +30,10 @@ router
 	console.log('Handling /names');
 	return getNames(env);
 })
-  .get('/*/*', (request, env) => {
-    console.log('Handling /* with', request.url);
-    return getCcipRead(request, env);
-  })
+.get('/:sender/:data.json', (request, env) => {
+	console.log('Handling /:sender/:data.json with', request.params.sender, request.params.data);
+	return getCcipRead(request, env);
+})
   .all('*', () => {
     console.log('Route not found');
     return new Response('Not found', { status: 404 });
