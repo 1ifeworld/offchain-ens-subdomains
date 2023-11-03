@@ -18,21 +18,21 @@ router
 	// Store db in request for use in routes
 	request.db = db;
 })
+.post('/set', (request, env) => {
+	console.log('Handling /set with', request);
+	return setName(request, env);
+})
+.get('/get/:name', (request, env) => {
+	console.log('Handling /get/:name with', request.params.name);
+	return getName(request, env);
+})
+.get('/names', (request: any, env) => {
+	console.log('Handling /names');
+	return getNames(env);
+})
   .get('/*/*', (request, env) => {
     console.log('Handling /* with', request.url);
     return getCcipRead(request, env);
-  })
-  .get('/get/:name', (request, env) => {
-    console.log('Handling /get/:name with', request.params.name);
-    return getName(request, env);
-  })
-  .get('/names', (request: any, env) => {
-    console.log('Handling /names');
-    return getNames(env);
-  })
-  .post('/set', (request, env) => {
-    console.log('Handling /set with', request);
-    return setName(request, env);
   })
   .all('*', () => {
     console.log('Route not found');
