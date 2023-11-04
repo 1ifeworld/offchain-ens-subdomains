@@ -1,61 +1,107 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
 
-import handleProxy from './proxy';
-import handleRedirect from './redirect';
-import apiRouter from './router';
 import { Router, IRequest } from 'itty-router';
-import { Env } from '../../env'
-import { getName, getNames, setName } from '../../handlers';
-import { getCcipRead} from '../../src/ccip-read/getCCIPRead'
+import { Env } from '../src/env';
+import { getName, getNames, setName } from './handlers';
+import { getCcipRead } from './handlers/getCCIPRead';
+import { Client } from 'pg';
+import { createKysely } from './db/kysely';
 
 const router = Router();
 
 router
-  .all('*')
-  .get('/lookup/*', (request: any, env) => getCcipRead(request as Request, env))
-	.get('/get/:name', (request: IRequest, env) => getName(request, env))
-  .get('/names', (request: any, env) => getNames(env))
-	.post('/set', (request: IRequest, env) => setName(request, env))
-  .all('*', () => new Response('Not found', { status: 404 }));
+.all('*', async (request, env, ctx) => {
+	console.log('Incoming Request:', request.method, request.url);
+
+	// Create a Kysely instance
+	const db = createKysely(env);
+
+	// Store db in request for use in routes
+	request.db = db;
+})
+.post('/set', (request, env) => {
+	console.log('Handling /set with', request);
+	return setName(request, env);
+})
+.get('/get/:name', (request, env) => {
+	console.log('Handling /get/:name with', request.params.name);
+	return getName(request, env);
+})
+.get('/names', (request: any, env) => {
+	console.log('Handling /names');
+	return getNames(env);
+})
+.get('/:sender/:data.json', (request, env) => {
+	console.log('Handling /:sender/:data.json with', request.params.sender, request.params.data);
+	return getCcipRead(request, env);
+})
+  .all('*', () => {
+    console.log('Route not found');
+    return new Response('Not found', { status: 404 });
+  });
+
+// Helper function to set CORS headers
+function getCORSHeaders() {
+  return new Headers({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,HEAD,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+  });
+}
+
+// Separate function to handle OPTIONS method
+function handleOptions(request: Request): Response {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: getCORSHeaders(),
+    });
+  }
+  throw new Error('Not an OPTIONS request');
+}
 
 
-	export default {
-		async fetch(request: any, env: Env, ctx: ExecutionContext): Promise<Response> {
-			const response = await router.handle(request as Request, env);
-			if (response.status !== 404) {
-				return response;
-			}
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    try {
+      // Initialize CORS headers for the response
+      const corsHeaders = getCORSHeaders();
 
-			const url = new URL(request.url);
+      // Connect to the database
+      const client = new Client({
+        connectionString: env.DATABASE_URL,
+      });
+			console.log('Before connecting to the database');
+			await client.connect();
+			console.log('After connecting to the database');
 
-			switch (url.pathname) {
-				case '/redirect':
-					return handleRedirect.fetch(request, env, ctx);
+      // Execute the route handler
+      let response: Response | undefined = await router.handle(request, env, ctx);
 
-				case '/proxy':
-					return handleProxy.fetch(request, env, ctx);
-			}
+      // Add database client cleanup to the waitUntil so it doesn't hold up the response
+      ctx.waitUntil(client.end());
 
-			if (url.pathname.startsWith('/api/')) {
-				return apiRouter.handle(request);
-			}
+      // Apply the CORS headers to the response
+      if (response) {
+        const newHeaders = new Headers({
+          ...Array.from(response.headers.entries()).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
+          ...Array.from(corsHeaders.entries()).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
+        });
+        response = new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders,
+        });
+      }
 
-			return new Response(
-				`Try making requests to:
-				<ul>
-				<li><code><a href="/redirect?redirectUrl=https:server.talktomenice.workers.dev">/redirect?redirectUrl=https:server.talktomenice.workers.dev</a></code>,</li>
-				<li><code><a href="/proxy?modify&proxyUrl=https://server.talktomenice.workers.dev">/proxy?modify&proxyUrl=server.talktomenice.workers.dev/</a></code>, or</li>
-				<li><code><a href="/api/todos">/api/todos</a></code></li>`,
-				{ headers: { 'Content-Type': 'text/html' } }
-			);
-		},
-	};
 
+      return response || new Response('Not found', { status: 404, headers: corsHeaders });
+    } catch (e) {
+      console.error('Error in fetch handler:', e);
+      return new Response('An error occurred', {
+        status: 500,
+        headers: getCORSHeaders(),
+      });
+    }
+  },
+};

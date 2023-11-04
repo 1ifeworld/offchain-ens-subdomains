@@ -1,4 +1,4 @@
-import { createKysely } from '../../src/db/kysely'
+import { createKysely } from '../../db/kysely'
 import { Env } from '../../env'
 import { Name } from '../../models'
 import { stringifyNameForDb } from './utils'

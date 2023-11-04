@@ -7,6 +7,7 @@ import { get } from './functions/get'
 import { set } from './functions/set'
 
 export async function setName(request: IRequest, env: Env): Promise<Response> {
+	console.log('Entering setName function');
   const body = await request.json()
   const safeParse = ZodName.safeParse(body)
 
@@ -36,6 +37,7 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
   // }
 
   // Check if the name is already taken
+	console.log('Checking existing name');
   const existingName = await get(name, env)
 
   // If the name is owned by someone else, return an error
@@ -46,11 +48,13 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
 
   // Save the name
   try {
+		console.log('Setting new name');
     await set(safeParse.data, env);
     const response = { success: true };
     return Response.json(response, { status: 201 });
   } catch (err) {
     console.error(err);
+		console.error('Error caught in setName:', err);
     const errorMessage = (err instanceof Error) ? err.message : "An unexpected error occurred";
     const response = { success: false, error: errorMessage };
     return Response.json(response, { status: 500 });

@@ -1,4 +1,4 @@
-import { createKysely } from '../src/db/kysely'
+import { createKysely } from '../db/kysely'
 import { Env } from '../env'
 import { parseNameFromDb } from './functions/utils'
 
