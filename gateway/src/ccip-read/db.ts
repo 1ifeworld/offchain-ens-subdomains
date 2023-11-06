@@ -1,9 +1,9 @@
 import { Env } from '../env'
 import { get } from '../handlers/functions/get'
-import { zeroAddress } from 'viem'
 
 type PromiseOrResult<T> = T | Promise<T>
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const EMPTY_CONTENT_HASH = '0x'
 const TTL = 1000
 
@@ -33,7 +33,7 @@ export const database: Database = {
   async addr(name, coinType, env) {
     try {
       const nameData = await get(name, env)
-      const addr = nameData?.addresses?.[coinType] || zeroAddress
+      const addr = nameData?.addresses?.[coinType] || ZERO_ADDRESS
       return { addr, ttl: TTL }
     } catch (error) {
       console.error('Error resolving addr', error)

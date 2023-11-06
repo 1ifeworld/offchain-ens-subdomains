@@ -26,15 +26,6 @@ function handleOptions(request: Request): Response {
   throw new Error('Not an OPTIONS request')
 }
 
-// Helper function to set CORS headers
-// function getCORSHeaders() {
-//   return new Headers({
-//     'Access-Control-Allow-Origin': '*',
-//     'Access-Control-Allow-Methods': 'GET,HEAD,POST,OPTIONS',
-//     'Access-Control-Allow-Headers': 'Content-Type',
-//     'Access-Control-Max-Age': '86400',
-//   });
-// }
 
 router.options('*', handleOptions)
 router.post('/set', (request, env) => {
@@ -60,8 +51,6 @@ export default {
     ctx: ExecutionContext,
   ): Promise<Response> {
     try {
-      // Initialize CORS headers for the response
-      // const corsHeaders = getCORSHeaders();
 
       // Connect to the database
       const client = new Client({
@@ -86,7 +75,6 @@ export default {
             (acc, [key, value]) => ({ ...acc, [key]: value }),
             {},
           ),
-          // ...Array.from(corsHeaders.entries()).reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {}),
         })
         response = new Response(response.body, {
           status: response.status,
@@ -100,7 +88,6 @@ export default {
       console.error('Error in fetch handler:', e)
       return new Response('An error occurred', {
         status: 500,
-        // headers: getCORSHeaders(),
       })
     }
   },

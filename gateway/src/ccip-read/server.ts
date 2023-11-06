@@ -4,8 +4,7 @@ import { Buffer } from 'node:buffer'
 import { BytesLike, ethers } from 'ethers'
 import { Result, hexConcat } from 'ethers/lib/utils'
 import { Env } from '../env'
-import { namehash } from 'viem'
-import { normalize } from 'viem/ens'
+
 import { Database, DatabaseResult } from './db'
 
 const Resolver = new ethers.utils.Interface(ensResolverAbi)
@@ -61,11 +60,11 @@ async function query(
 ): Promise<{ result: BytesLike; validUntil: number }> {
   const { signature, args } = Resolver.parseTransaction({ data })
 
-  if (normalize(name) !== name) {
+  if (ethers.utils.nameprep(name) !== name) {
     throw new Error('Name must be normalised')
   }
 
-  if (namehash(name) !== args[0]) {
+  if (ethers.utils.namehash(name) !== args[0]) {
     throw new Error('Name does not match namehash')
   }
 
