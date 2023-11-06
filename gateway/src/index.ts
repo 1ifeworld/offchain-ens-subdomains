@@ -1,7 +1,7 @@
 import { Router, IRequest } from 'itty-router'
 import { Env } from './env'
 import { getName, getNames, setName } from './handlers'
-import { getCcipRead } from './handlers/getCCIPRead'
+import { getCcipRead } from './handlers/getCcipRead'
 import { Client } from 'pg'
 import { createKysely } from './db/kysely'
 
