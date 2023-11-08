@@ -7,6 +7,25 @@ import { createKysely } from './db/kysely'
 
 const router = Router()
 
+// CORS Headers function
+function getCORSHeaders(origin: string): HeadersInit {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400', // 24 hours
+  }
+}
+
+// Pre-flight request handling
+function handleOptions(request: Request): Response {
+  // Set CORS headers for pre-flight requests
+  const origin = request.headers.get('Origin') || '*'
+  const headers = getCORSHeaders(origin)
+  // @ts-expect-error
+  return new Response(null, { status: 204, headers })
+}
+
 router.all('*', async (request, env, ctx) => {
   // Create a Kysely instance
   const db = createKysely(env)
@@ -14,17 +33,6 @@ router.all('*', async (request, env, ctx) => {
   // Store db in request for use in routes
   request.db = db
 })
-
-// Separate function to handle OPTIONS method
-function handleOptions(request: Request): Response {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      // headers: getCORSHeaders(),
-    })
-  }
-  throw new Error('Not an OPTIONS request')
-}
 
 router.options('*', handleOptions)
 router.post('/set', (request, env) => {
@@ -68,12 +76,14 @@ export default {
 
       // Apply the CORS headers to the response
       if (response) {
-        const newHeaders = new Headers({
-          ...Array.from(response.headers.entries()).reduce(
-            (acc, [key, value]) => ({ ...acc, [key]: value }),
-            {},
-          ),
+        const origin = request.headers.get('Origin') || '*'
+        const corsHeaders = getCORSHeaders(origin)
+
+        const newHeaders = new Headers(response.headers)
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+          newHeaders.set(key, value)
         })
+
         response = new Response(response.body, {
           status: response.status,
           statusText: response.statusText,
@@ -86,6 +96,8 @@ export default {
       console.error('Error in fetch handler:', e)
       return new Response('An error occurred', {
         status: 500,
+        // @ts-expect-error
+        headers: getCORSHeaders('*'),
       })
     }
   },
