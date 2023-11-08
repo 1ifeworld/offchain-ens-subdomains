@@ -5,7 +5,6 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev",
     "format": "biome format . --write"
   },
   "devDependencies": {
