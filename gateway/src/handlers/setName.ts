@@ -20,12 +20,7 @@ export async function setName(request: IRequest, env: Env): Promise<Response> {
   if (name.split('.').length !== 3) {
     const response = { success: false, error: 'Invalid name' }
     return Response.json(response, { status: 400 })
-  }// // Validate signature
-  // try {
-  //   const signer = verifyMessage(signature.message, signature.hash)
-  //   if (signer.toLowerCase() !== owner.toLowerCase()) {
-  //     throw new Error('Invalid signer')
-  //   }
+  }//   } //     throw new Error('Invalid signer') //   if (signer.toLowerCase() !== owner.toLowerCase()) { //   const signer = verifyMessage(signature.message, signature.hash) // try { // // Validate signature
   // } catch (err) {
   //   console.error(err)
   //   const response = { success: false, error: err }
