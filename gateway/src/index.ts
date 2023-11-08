@@ -1,6 +1,6 @@
 import { Router, IRequest } from 'itty-router'
 import { Env } from './env'
-import { getName, getNames, setName } from './handlers'
+import { getName, getNames, setName, getId } from './handlers'
 import { getCcipRead } from './handlers/getCcipRead'
 import { Client } from 'pg'
 import { createKysely } from './db/kysely'
@@ -22,7 +22,6 @@ function handleOptions(request: Request): Response {
   // Set CORS headers for pre-flight requests
   const origin = request.headers.get('Origin') || '*'
   const headers = getCORSHeaders(origin)
-  // @ts-expect-error
   return new Response(null, { status: 204, headers })
 }
 
@@ -44,6 +43,9 @@ router.get('/get/:name', (request, env) => {
 router.get('/names', (request: any, env) => {
   return getNames(env)
 })
+router.get('/id/:owner', (request: any, env) => {
+  return getId(request, env)
+});
 router.get('/:sender/:data.json', (request, env) => {
   return getCcipRead(request, env)
 })
@@ -58,13 +60,11 @@ export default {
     ctx: ExecutionContext,
   ): Promise<Response> {
     try {
-      // Connect to the database
       const client = new Client({
         connectionString: env.DATABASE_URL,
       })
       await client.connect()
 
-      // Execute the route handler
       let response: Response | undefined = await router.handle(
         request,
         env,
@@ -96,7 +96,6 @@ export default {
       console.error('Error in fetch handler:', e)
       return new Response('An error occurred', {
         status: 500,
-        // @ts-expect-error
         headers: getCORSHeaders('*'),
       })
     }
