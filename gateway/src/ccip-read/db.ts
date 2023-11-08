@@ -3,7 +3,7 @@ import { get } from '../handlers/functions/get'
 
 type PromiseOrResult<T> = T | Promise<T>
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const EMPTY_CONTENT_HASH = '0x'
 const TTL = 1000
 

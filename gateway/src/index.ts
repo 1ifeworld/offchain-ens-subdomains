@@ -26,7 +26,6 @@ function handleOptions(request: Request): Response {
   throw new Error('Not an OPTIONS request')
 }
 
-
 router.options('*', handleOptions)
 router.post('/set', (request, env) => {
   return setName(request, env)
@@ -51,7 +50,6 @@ export default {
     ctx: ExecutionContext,
   ): Promise<Response> {
     try {
-
       // Connect to the database
       const client = new Client({
         connectionString: env.DATABASE_URL,
