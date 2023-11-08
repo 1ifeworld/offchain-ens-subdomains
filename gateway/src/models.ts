@@ -5,6 +5,8 @@ export const ZodName = z.object({
   id: z.string(),
   name: z.string().regex(/^[a-z0-9-.]+$/),
   owner: z.string(),
+	signer: z.string(),
+	email: z.string(),
   addresses: z.record(z.string()).optional(),
   texts: z.record(z.string()).optional(),
   contenthash: z.string().optional(),
@@ -24,6 +26,8 @@ export interface NameInKysely {
   id: string
   name: string
   owner: string
+	signer: string
+	email: string
   addresses: string | null // D1 doesn't support JSON yet, we'll have to parse it manually
   texts: string | null // D1 doesn't support JSON yet, we'll have to parse it manually
   contenthash: string | null
