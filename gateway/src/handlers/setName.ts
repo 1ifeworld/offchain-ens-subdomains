@@ -6,6 +6,7 @@ import { ZodNameWithSignature, ZodName } from '../models'
 import { get } from './functions/get'
 import { set } from './functions/set'
 
+
 export async function setName(request: IRequest, env: Env): Promise<Response> {
   const body = await request.json()
   const safeParse = ZodName.safeParse(body)

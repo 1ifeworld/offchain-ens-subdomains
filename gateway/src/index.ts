@@ -46,6 +46,9 @@ router.get('/names', (request: any, env) => {
 router.get('/id/:owner', (request: any, env) => {
   return getId(request, env)
 });
+router.get('/username/:id', (request, env) => {
+  return getUsernameById(request, env);
+});
 router.get('/:sender/:data.json', (request, env) => {
   return getCcipRead(request, env)
 })

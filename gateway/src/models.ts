@@ -2,11 +2,11 @@ import { ColumnType, Generated } from 'kysely'
 import z from 'zod'
 
 export const ZodName = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   name: z.string().regex(/^[a-z0-9-.]+$/),
   owner: z.string(),
-	signer: z.string(),
-	email: z.string(),
+	signer: z.string().optional(),
+	email: z.string().optional(),
   addresses: z.record(z.string()).optional(),
   texts: z.record(z.string()).optional(),
   contenthash: z.string().optional(),
