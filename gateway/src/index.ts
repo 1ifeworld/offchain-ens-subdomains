@@ -1,6 +1,6 @@
 import { Router, IRequest } from 'itty-router'
 import { Env } from './env'
-import { getName, getNames, setName, getId } from './handlers'
+import { getName, getNames, setName, getId, getUsernameById} from './handlers'
 import { getCcipRead } from './handlers/getCcipRead'
 import { Client } from 'pg'
 import { createKysely } from './db/kysely'
@@ -46,7 +46,7 @@ router.get('/names', (request: any, env) => {
 router.get('/id/:owner', (request: any, env) => {
   return getId(request, env)
 });
-router.get('/username/:id', (request, env) => {
+router.get('/get/:id', (request, env) => {
   return getUsernameById(request, env);
 });
 router.get('/:sender/:data.json', (request, env) => {

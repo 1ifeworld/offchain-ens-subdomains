@@ -18,14 +18,14 @@ export async function getUsernameById(request: IRequest, env: Env) {
     const safeParse = parseNameFromDb(results);
 
     if (safeParse.length === 0) {
-      return new Response('Username not found', { status: 404 });
+      return new Response(JSON.stringify({ success: false, error: 'Username not found' }), { status: 404 });
     }
 
     const username = safeParse[0].name;
 
-    return new Response(JSON.stringify({ username }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, username }), { status: 200 });
   } catch (error) {
     console.error('Error fetching username by ID:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    return new Response(JSON.stringify({ success: false, error: 'Internal Server Error' }), { status: 500 });
   }
 }
