@@ -37,15 +37,15 @@ router.options('*', handleOptions)
 router.post('/set', (request, env) => {
   return setName(request, env)
 })
-// router.get('/get/:name', (request, env) => {
-//   return getName(request, env)
-// })
+router.get('/get/:name', (request, env) => {
+  return getName(request, env)
+})
 // router.get('/names', (request: any, env) => {
 //   return getNames(env)
 // })
-// router.get('/id/:owner', (request: any, env) => {
-//   return getId(request, env)
-// });
+router.get('/id/:owner', (request: any, env) => {
+  return getId(request, env)
+});
 router.get('/username/:id', (request, env) => {
   return getUsernameById(request, env);
 });
